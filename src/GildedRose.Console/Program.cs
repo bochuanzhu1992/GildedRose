@@ -2,9 +2,9 @@
 
 namespace GildedRose.Console
 {
-    class Program
+    public class Program
     {
-        IList<Item> Items;
+        public IList<Item> Items { get; set; }
         static void Main(string[] args)
         {
             System.Console.WriteLine("OMGHAI!");
@@ -34,82 +34,116 @@ namespace GildedRose.Console
 
         }
 
+
         public void UpdateQuality()
         {
             for (var i = 0; i < Items.Count; i++)
             {
-                if (Items[i].Name != "Aged Brie" && Items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
+                var item = Items[i];
+
+                if (IsSulfuras(item))
                 {
-                    if (Items[i].Quality > 0)
-                    {
-                        if (Items[i].Name != "Sulfuras, Hand of Ragnaros")
-                        {
-                            Items[i].Quality = Items[i].Quality - 1;
-                        }
-                    }
+                    continue;
+                }
+
+                var hasExpired = item.SellIn <= 0;
+
+                if (IsAgedBrie(item))
+                {
+                    UpdateAgedBrie(item, hasExpired );
+                }
+                else if (IsBackstagePass(item))
+                {
+                    UpdateBackstagePass(item, hasExpired );
                 }
                 else
                 {
-                    if (Items[i].Quality < 50)
-                    {
-                        Items[i].Quality = Items[i].Quality + 1;
-
-                        if (Items[i].Name == "Backstage passes to a TAFKAL80ETC concert")
-                        {
-                            if (Items[i].SellIn < 11)
-                            {
-                                if (Items[i].Quality < 50)
-                                {
-                                    Items[i].Quality = Items[i].Quality + 1;
-                                }
-                            }
-
-                            if (Items[i].SellIn < 6)
-                            {
-                                if (Items[i].Quality < 50)
-                                {
-                                    Items[i].Quality = Items[i].Quality + 1;
-                                }
-                            }
-                        }
-                    }
+                    UpdateNormalItem(item, hasExpired );
                 }
 
-                if (Items[i].Name != "Sulfuras, Hand of Ragnaros")
-                {
-                    Items[i].SellIn = Items[i].SellIn - 1;
-                }
-
-                if (Items[i].SellIn < 0)
-                {
-                    if (Items[i].Name != "Aged Brie")
-                    {
-                        if (Items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
-                        {
-                            if (Items[i].Quality > 0)
-                            {
-                                if (Items[i].Name != "Sulfuras, Hand of Ragnaros")
-                                {
-                                    Items[i].Quality = Items[i].Quality - 1;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Items[i].Quality = Items[i].Quality - Items[i].Quality;
-                        }
-                    }
-                    else
-                    {
-                        if (Items[i].Quality < 50)
-                        {
-                            Items[i].Quality = Items[i].Quality + 1;
-                        }
-                    }
-                }
+                item.SellIn--;
             }
         }
 
+        private void UpdateAgedBrie(Item item, bool hasExpired )
+        {
+            IncreaseQuality(item);
+
+            if (hasExpired )
+            {
+                IncreaseQuality(item);
+            }
+        }
+
+        private void UpdateBackstagePass(Item item, bool hasExpired )
+        {
+            if (hasExpired )
+            {
+                item.Quality = 0;
+                return;
+            }
+
+            IncreaseQuality(item);
+
+            if (item.SellIn <= 10)
+            {
+                IncreaseQuality(item);
+            }
+
+            if (item.SellIn <= 5)
+            {
+                IncreaseQuality(item);
+            }
+        }
+
+        private void UpdateNormalItem(Item item, bool hasExpired )
+        {
+            // Conjured items degrade twice as fast as normal items
+            var degradeAmount = IsConjured(item) ? 2 : 1;
+
+            DecreaseQuality(item, degradeAmount);
+
+            if (hasExpired )
+            {
+                DecreaseQuality(item, degradeAmount);
+            }
+        }
+
+        private bool IsConjured(Item item)
+        {
+            return item.Name.StartsWith("Conjured", System.StringComparison.OrdinalIgnoreCase);
+        }
+        private bool IsAgedBrie(Item item)
+        {
+            return item.Name == "Aged Brie";
+        }
+
+        private bool IsBackstagePass(Item item)
+        {
+            return item.Name == "Backstage passes to a TAFKAL80ETC concert";
+        }
+
+        private bool IsSulfuras(Item item)
+        {
+            return item.Name == "Sulfuras, Hand of Ragnaros";
+        }
+        private void IncreaseQuality(Item item)
+        {
+            if (item.Quality < 50)
+            {
+                item.Quality++;
+            }
+        }
+
+        private void DecreaseQuality(Item item, int amount = 1)
+        {
+            item.Quality -= amount;
+
+            if (item.Quality < 0)
+            {
+                item.Quality = 0;
+            }
+        }
     }
 
     public class Item
@@ -120,5 +154,6 @@ namespace GildedRose.Console
 
         public int Quality { get; set; }
     }
+
 
 }

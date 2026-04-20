@@ -233,3 +233,5 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+/.vs/GildedRose
+/.vs
